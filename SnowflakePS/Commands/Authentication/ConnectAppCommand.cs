@@ -178,7 +178,7 @@ namespace Snowflake.Powershell
             loggerDiagnosticTest.Info("Environment: {0} - {1} | Dotnet Version: {2} | PowerShell Version: {3} | HTTP_PROXY set: {4} | HTTPS_PROXY set: {5}",
                 RuntimeInformation.OSDescription, RuntimeInformation.OSArchitecture, RuntimeInformation.FrameworkDescription, this.Host.Version, Environment.GetEnvironmentVariable("HTTP_PROXY") != null, Environment.GetEnvironmentVariable("HTTPS_PROXY") != null);
             loggerDiagnosticTest.Info("Passed Parameters: Account: {0} | UserName: {1} | Password: {2} | Credential: {3} | SSO: {4} | MainAppURL: {5}",
-                this.Account.Length != null, this.UserName != null, this.Password != null, this.Credential != null, this.SSO.IsPresent, this.MainAppURL != "https://app.snowflake.com" ? "custom" : "default (https://app.snowflake.com)");
+                this.Account.Length > 0, this.UserName != null, this.Password != null, this.Credential != null, this.SSO.IsPresent, this.MainAppURL != "https://app.snowflake.com" ? "custom" : "default (https://app.snowflake.com)");
 
             logger.Trace("BEGIN {0}", this.GetType().Name);
             WriteVerbose(String.Format("BEGIN {0}", this.GetType().Name));

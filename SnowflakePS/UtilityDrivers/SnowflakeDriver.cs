@@ -276,20 +276,61 @@ $@"{{
         public static string GetWorksheets(AppUserContext authContext)
         {
             string optionsParam = "{\"sort\":{\"col\":\"viewed\",\"dir\":\"desc\"},\"limit\":500,\"owner\":null,\"types\":[\"query\"],\"showNeverViewed\":\"if-invited\"}";
-
             string requestBody = String.Format("options={0}&location=worksheets", HttpUtility.UrlEncode(optionsParam));
+            List<JObject> allEntities = new(); // Store all entities from all pages
+            string nextPageToken = null;
 
-            return apiPOST(
-                authContext.AppServerUrl,
-                String.Format("v0/organizations/{0}/entities/list", authContext.OrganizationID),
-                "application/json",
-                requestBody,
-                "application/x-www-form-urlencoded", 
-                cookies: authContext.Cookies,
-                csrfTokenValue: authContext.CSRFToken, 
-                snowflakeContext: authContext.ContextUserNameUrl, 
-                referer: String.Format("{0}/", authContext.MainAppUrl), 
-                String.Empty);
+            do
+            {
+                // Update request body with the next page token if it exists
+                if (!string.IsNullOrEmpty(nextPageToken))
+                {
+                    optionsParam = $"{{\"sort\":{{\"col\":\"viewed\",\"dir\":\"desc\"}},\"limit\":500,\"owner\":null,\"types\":[\"query\"],\"showNeverViewed\":\"if-invited\",\"from\":\"{nextPageToken}\"}}";
+                    requestBody = String.Format("options={0}&location=worksheets", HttpUtility.UrlEncode(optionsParam));
+                }
+
+                string resp = apiPOST(
+                    authContext.AppServerUrl,
+                    String.Format("v0/organizations/{0}/entities/list", authContext.OrganizationID),
+                    "application/json",
+                    requestBody,
+                    "application/x-www-form-urlencoded",
+                    cookies: authContext.Cookies,
+                    csrfTokenValue: authContext.CSRFToken,
+                    snowflakeContext: authContext.ContextUserNameUrl,
+                    referer: String.Format("{0}/", authContext.MainAppUrl),
+                    String.Empty);
+
+                // Parse the response to extract the entities and the next page token
+                JObject jsonResponse = JObject.Parse(resp);
+
+                // Add the current page's entities to the list
+                if (jsonResponse["entities"] != null)
+                {
+                    foreach (var entity in jsonResponse["entities"])
+                    {
+                        allEntities.Add((JObject)entity);
+                    }
+                }
+
+                // Update the next page token
+                nextPageToken = jsonResponse["next"]?.ToString();
+
+                // Log or handle cases where the response does not contain a valid "next" key
+                if (string.IsNullOrEmpty(nextPageToken))
+                {
+                    logger.Info("No more pages to fetch. Exiting loop.");
+                }
+
+            } while (!string.IsNullOrEmpty(nextPageToken));
+
+            // Create the final JSON object with the "entities" key
+            var finalResponse = new JObject
+            {
+                ["entities"] = JArray.FromObject(allEntities)
+            };
+
+            return finalResponse.ToString();
         }
 
         public static string GetWorksheet(
@@ -736,8 +777,32 @@ $@"{{
                 cookies: authContext.Cookies, 
                 csrfTokenValue: authContext.CSRFToken,
                 snowflakeContext: authContext.ContextUserNameUrl, 
+                referer: String.Format("{0}/", authContext.MainAppUrl),
+                String.Empty);
+        }
+
+        public static string CreateFolder(AppUserContext authContext, string folderName, string roleName)
+        {
+            string requestBody = String.Format("orgId={0}&type=list&name={1}&visibility=private&role={2}&&isImported=false&", authContext.OrganizationID, HttpUtility.UrlEncode(folderName), roleName);
+            
+            logger.Info("Request Payload: {0}", requestBody);
+
+            string response = apiPOST(
+                authContext.AppServerUrl,
+                "v0/folders",
+                "application/json",
+                requestBody,
+                "application/x-www-form-urlencoded",
+                cookies: authContext.Cookies, 
+                csrfTokenValue: authContext.CSRFToken,
+                snowflakeContext: authContext.ContextUserNameUrl, 
                 referer: String.Format("{0}/", authContext.MainAppUrl), 
                 String.Empty);
+            
+            // Log the raw response
+            logger.Info("Raw API Response: {0}", response);
+            
+            return response;
         }
 
         #endregion

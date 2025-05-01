@@ -80,6 +80,14 @@ namespace Snowflake.Powershell
             HelpMessage = "Should the Worksheet be executed")]
         public SwitchParameter Execute { get; set; }
 
+        [Parameter(
+            Mandatory = false,
+            Position = 4,
+            ValueFromPipeline = true,
+            ValueFromPipelineByPropertyName = true,
+            HelpMessage = "Folder ID where the Worksheet should be created or updated")]
+        public string FolderId { get; set; } = null;
+
         protected override void BeginProcessing()
         {
             stopWatch.Start();
@@ -250,8 +258,20 @@ namespace Snowflake.Powershell
                 }
                 else
                 {
-                    // Creating new worksheet
-                    string createWorksheetApiResult = SnowflakeDriver.CreateWorksheet(this.AuthContext, this.Worksheet.WorksheetName);
+                    string createWorksheetApiResult = string.Empty;
+                    
+                    WriteVerbose(String.Format("BEGIN {0}", this.FolderId));
+
+                    if (string.IsNullOrEmpty(this.FolderId))
+                    {
+                        WriteVerbose(String.Format("Running function without folderId"));
+                        createWorksheetApiResult = SnowflakeDriver.CreateWorksheet(this.AuthContext, this.Worksheet.WorksheetName);
+
+                    }else
+                    {
+                        WriteVerbose(String.Format("Running function with folderId"));
+                        createWorksheetApiResult = SnowflakeDriver.CreateWorksheet(this.AuthContext, this.Worksheet.WorksheetName, this.FolderId);
+                    }
 
                     if (createWorksheetApiResult.Length == 0)
                     {

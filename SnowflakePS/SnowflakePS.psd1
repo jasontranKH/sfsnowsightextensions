@@ -91,7 +91,7 @@ CmdletsToExport = @(
     "Connect-SFApp", 
     "Get-SFQueryProfile", 
     "Get-SFWorksheets", "New-SFWorksheet", "Remove-SFWorksheet", "Invoke-SFWorksheet", 
-    "Get-SFFolders", 
+    "Get-SFFolders", "New-SFFolder",
     "Get-SFDashboards", "New-SFDashboard", "Remove-SFDashboard", "Invoke-SFDashboard", 
     "Get-SFFilters", "New-SFFilter", "Remove-SFFilter")
 
