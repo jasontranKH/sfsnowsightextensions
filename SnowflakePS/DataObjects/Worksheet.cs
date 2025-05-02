@@ -92,8 +92,6 @@ namespace Snowflake.Powershell
             this.WorksheetName = JSONHelper.getStringValueFromJToken(entityObject["info"], "name");
 
             this.Query = String.Empty;
-            this.FolderID = JSONHelper.getStringValueFromJToken(entityObject["info"], "folderId");
-            this.FolderName = JSONHelper.getStringValueFromJToken(entityObject["info"], "folderName");
 
             JObject entityDetailObject = (JObject)JSONHelper.getJTokenValueFromJToken(queriesObject, this.WorksheetID);
             if (entityDetailObject != null)

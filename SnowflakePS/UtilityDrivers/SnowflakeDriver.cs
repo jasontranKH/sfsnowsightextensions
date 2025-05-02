@@ -278,6 +278,9 @@ $@"{{
             string optionsParam = "{\"sort\":{\"col\":\"viewed\",\"dir\":\"desc\"},\"limit\":500,\"owner\":null,\"types\":[\"query\"],\"showNeverViewed\":\"if-invited\"}";
             string requestBody = String.Format("options={0}&location=worksheets", HttpUtility.UrlEncode(optionsParam));
             List<JObject> allEntities = new(); // Store all entities from all pages
+            JObject mergedQueries = new JObject(); // To merge models.queries
+            JObject mergedUsers = new JObject(); // To merge models.users
+            JObject mergedFolders = new JObject(); // To merge models.folders
             string nextPageToken = null;
 
             do
@@ -313,21 +316,48 @@ $@"{{
                     }
                 }
 
+                // Merge models.queries
+                if (jsonResponse["models"]?["queries"] != null)
+                {
+                    foreach (var query in (JObject)jsonResponse["models"]["queries"])
+                    {
+                        mergedQueries[query.Key] = query.Value;
+                    }
+                }
+
+                // Merge models.users
+                if (jsonResponse["models"]?["users"] != null)
+                {
+                    foreach (var user in (JObject)jsonResponse["models"]["users"])
+                    {
+                        mergedUsers[user.Key] = user.Value;
+                    }
+                }
+
+                // Merge models.folders
+                if (jsonResponse["models"]?["folders"] != null)
+                {
+                    foreach (var folder in (JObject)jsonResponse["models"]["folders"])
+                    {
+                        mergedFolders[folder.Key] = folder.Value;
+                    }
+                }
+
                 // Update the next page token
                 nextPageToken = jsonResponse["next"]?.ToString();
 
-                // Log or handle cases where the response does not contain a valid "next" key
-                if (string.IsNullOrEmpty(nextPageToken))
-                {
-                    logger.Info("No more pages to fetch. Exiting loop.");
-                }
-
             } while (!string.IsNullOrEmpty(nextPageToken));
 
-            // Create the final JSON object with the "entities" key
+            // Create the final JSON object with the merged data
             var finalResponse = new JObject
             {
-                ["entities"] = JArray.FromObject(allEntities)
+                ["entities"] = JArray.FromObject(allEntities),
+                ["models"] = new JObject
+                {
+                    ["queries"] = mergedQueries,
+                    ["users"] = mergedUsers,
+                    ["folders"] = mergedFolders
+                }
             };
 
             return finalResponse.ToString();
